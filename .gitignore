@@ -143,3 +143,4 @@ uv.lock
 # RAG Specific exclusions
 chroma_db/
 uploaded_documents/
+.env.example
