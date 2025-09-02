@@ -1,0 +1,7 @@
+# To separate your traces from other application
+LANGSMITH_PROJECT=acorre-ai-agent
+
+# Add API keys for connecting to LLM providers, data sources, and other integrations here
+LANGSMITH_API_KEY=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
+
+OPENAI_API_KEY = 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
