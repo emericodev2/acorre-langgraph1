@@ -2,240 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>LangGraph Chat</title>
-  <!-- Prism.js for code highlighting -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/themes/prism-tomorrow.min.css" rel="stylesheet"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-javascript.min.js"></script>
+  <title>Website RAG Chatbot</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f5f7fa;
-    }
-
-    #chatContainer {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      width: 100%;
-      background: #ffffff;
-    }
-
-    #chatHeader {
-      padding: 15px 20px;
-      background: linear-gradient(90deg, #4facfe, #00f2fe);
-      color: white;
-      font-weight: bold;
-      font-size: 1.2rem;
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    #chat {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      scroll-behavior: smooth;
-      background: #f0f4f8;
-    }
-
-    .message {
-      padding: 10px 15px;
-      border-radius: 20px;
-      max-width: 75%;
-      word-wrap: break-word;
-      line-height: 1.4;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      animation: fadeIn 0.2s ease-in-out;
-    }
-
-    .human {
-      background-color: #4facfe;
-      color: white;
-      align-self: flex-end;
-      border-bottom-right-radius: 0;
-    }
-
-    .assistant {
-      background-color: #e4e6eb;
-      color: #333;
-      align-self: flex-start;
-      border-bottom-left-radius: 0;
-    }
-
-    pre {
-      margin: 0;
-      padding: 10px;
-      border-radius: 10px;
-      overflow-x: auto;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    #inputArea {
-      display: flex;
-      padding: 10px 15px;
-      border-top: 1px solid #ddd;
-      gap: 10px;
-      flex-shrink: 0;
-      background: #fff;
-    }
-
-    #inputBox {
-      flex: 1;
-      padding: 10px 15px;
-      border-radius: 25px;
-      border: 1px solid #ccc;
-      outline: none;
-      font-size: 1rem;
-    }
-
-    #sendBtn {
-      padding: 10px 20px;
-      background-color: #4facfe;
-      color: white;
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.3s;
-    }
-
-    #sendBtn:hover {
-      background-color: #00c6ff;
-    }
-
-    #chat::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    #chat::-webkit-scrollbar-thumb {
-      background: rgba(0,0,0,0.2);
-      border-radius: 4px;
-    }
-
-    #chat::-webkit-scrollbar-track {
-      background: transparent;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #chatbox { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; }
+    .user { color: blue; margin: 5px 0; }
+    .bot { color: green; margin: 5px 0; }
   </style>
 </head>
 <body>
-  <div id="chatContainer">
-    <div id="chatHeader">LangGraph Chat</div>
-    <div id="chat"></div>
-    <div id="inputArea">
-      <input type="text" id="inputBox" placeholder="Type your message..." />
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
+  <h2>Chatbot</h2>
+  <div id="chatbox"></div>
+  <input type="text" id="userInput" placeholder="Type a message..." style="width:80%;">
+  <button onclick="sendMessage()">Send</button>
 
   <script>
-    const deploymentUrl = "https://sample-chatbot-7b0a5cab9a5d5b458bb771f72f4fdbac.us.langgraph.app/runs/stream";
-    const apiKey = "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";
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const message = input.value.trim();
+      if (!message) return;
 
-    const chatDiv = document.getElementById("chat");
-    const inputBox = document.getElementById("inputBox");
-    const sendBtn = document.getElementById("sendBtn");
+      // Show user message
+      const chatbox = document.getElementById("chatbox");
+      chatbox.innerHTML += `<div class="user"><b>User:</b> ${message}</div>`;
+      input.value = "";
 
-    function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, m => ({
-        '&':'&amp;',
-        '<':'&lt;',
-        '>':'&gt;',
-        '"':'&quot;',
-        "'":'&#39;'
-      }[m]));
-    }
-
-    function addMessage(content, role) {
-      const msg = document.createElement("div");
-      msg.className = "message " + role;
-
-      const formatted = escapeHtml(content)
-        .replace(/```(.*?)\n([\s\S]*?)```/g, (match, lang, code) => {
-          return `<pre><code class="language-${lang.trim()}">${escapeHtml(code)}</code></pre>`;
-        })
-        .replace(/\n/g, "<br>")
-        .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
-        .replace(/\*(.*?)\*/g, "<i>$1</i>");
-
-      msg.innerHTML = formatted;
-      chatDiv.appendChild(msg);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-
-      msg.querySelectorAll('pre code').forEach(block => Prism.highlightElement(block));
-    }
-
-    async function sendMessage(message) {
-      addMessage(message, "human");
-
-      const response = await fetch(deploymentUrl, {
+      // Send to backend
+      const response = await fetch("http://localhost:8000/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Api-Key": apiKey
-        },
-        body: JSON.stringify({
-          assistant_id: "agent",
-          input: { messages: [{ role: "human", content: message }] },
-          stream_mode: "updates"
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
       });
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantMessage = "";
+      const data = await response.json();
+      chatbox.innerHTML += `<div class="bot"><b>Bot:</b> ${data.reply}</div>`;
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        chunk.split("\n").forEach(line => {
-          if (line.startsWith("data: ")) {
-            const data = line.replace("data: ", "").trim();
-            if (data !== "[DONE]") {
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.chatbot?.messages) {
-                  parsed.chatbot.messages.forEach(msg => {
-                    assistantMessage += msg.content;
-                  });
-                }
-              } catch (err) {
-                console.error("Failed to parse chunk", err);
-              }
-            }
-          }
-        });
-      }
-
-      if (assistantMessage.trim()) {
-        addMessage(assistantMessage.trim(), "assistant");
-      }
+      chatbox.scrollTop = chatbox.scrollHeight;
     }
-
-    sendBtn.addEventListener("click", () => {
-      const message = inputBox.value.trim();
-      if (message) {
-        sendMessage(message);
-        inputBox.value = "";
-      }
-    });
-
-    inputBox.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendBtn.click();
-    });
   </script>
 </body>
 </html>

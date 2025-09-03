@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+chroma_db
 # C extensions
 *.so
 
@@ -163,3 +163,5 @@ cython_debug/
 uv.lock
 .langgraph_api/
 src/agent/sample_chatbot.py
+chroma_db/
+chat_history.json
