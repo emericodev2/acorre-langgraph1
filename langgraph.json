@@ -1,7 +1,8 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "multi_rag_agent": "./multi_rag_system/graph.py:graph"
+    "agent": "./src/agent/graph.py:graph"
   },
-  "env": ".env"
+  "env": ".env",
+  "image_distro": "wolfi"
 }
