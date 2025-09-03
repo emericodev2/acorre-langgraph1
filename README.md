@@ -1,108 +1,175 @@
-# LangGraph RAG Agent
+<!-- README_PLATFORM.md - Platform-specific deployment guide -->
+# Multi-RAG System - LangGraph Platform Deployment
 
-A Retrieval-Augmented Generation (RAG) agent built with LangGraph, capable of scraping website content, processing uploaded documents, and answering queries using a combination of vector search and OpenAI LLM fallback. Content is stored in a persistent ChromaDB vector database for fast semantic retrieval.
+This guide covers deploying the Multi-RAG system specifically on the LangGraph Platform.
 
-## Features
+## Pre-deployment Setup
 
-- 🌐 **Website Scraping**: Ingest and store website content for retrieval.
-- 📄 **Document Ingestion**: Upload and process PDFs, text, HTML, XML, Markdown, CSV, and Excel files.
-- 🔍 **Vector Search**: Semantic search over all stored content using OpenAI embeddings.
-- 🤖 **RAG Responses**: Generate answers using retrieved content; fallback to OpenAI LLM if no relevant content is found.
-- 🗑️ **Content Management**: List and manage available content sources.
-- 🧩 **LangGraph Integration**: Designed as a modular graph for use in LangGraph workflows or as a backend API.
-
-## Project Structure
-
+1. **Project Structure**
 ```
-acorre-langgraph1/
-├── src/agent/
-│   ├── graph.py         # Main RAG agent logic (graph, ingestion, query)
-│   └── __init__.py      # Exports the graph
-├── requirements.txt     # Python dependencies
-├── pyproject.toml       # Project metadata and dependencies
-├── langgraph.json       # LangGraph graph configuration
-├── uploaded_documents/  # Directory for uploaded documents
-├── static/              # Static assets (if any)
-├── LICENSE              # MIT License
-└── README.md            # Project documentation
+multi-rag-system/
+├── multi_rag_system/
+│   ├── __init__.py
+│   ├── graph.py          # Main graph definition
+│   ├── system.py         # Core RAG system
+│   ├── state.py          # State definitions
+│   ├── nodes.py          # Node implementations
+│   └── routing.py        # Routing logic
+├── langgraph.json        # Platform configuration
+├── pyproject.toml        # Package configuration
+├── requirements.txt      # Dependencies
+├── .env                  # Environment variables
+└── deployment_platform.py # Platform utilities
 ```
 
-## Setup
+2. **Environment Variables**
+Create a `.env` file:
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+CHUNK_SIZE=1000
+CHUNK_OVERLAP=200
+SIMILARITY_THRESHOLD=0.7
+DEFAULT_WEBSITES=https://docs.python.org/3/,https://langchain-ai.github.io/langgraph/
+```
 
-### Prerequisites
-- Python 3.9+
-- OpenAI API key
-- ChromaDB dependencies
-- `libmagic` (for document type detection):
-  - **Windows**: `pip install python-magic-bin` (may require `pip install msvc-runtime` first)
-  - **macOS**: `brew install libmagic`
-  - **Linux**: `sudo apt-get install libmagic-dev`
+## Deployment Commands
 
-### Installation
+### 1. Install LangGraph CLI
+```bash
+pip install langgraph-cli
+```
 
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd acorre-langgraph1
-   ```
-2. **Create a virtual environment:**
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On Unix/macOS:
-   source venv/bin/activate
-   ```
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Set up environment variables:**
-   Create a `.env` file in the project root:
-   ```env
-   OPENAI_API_KEY=your_openai_api_key_here
-   ```
+### 2. Login to Platform
+```bash
+langgraph auth login
+```
 
-## Usage
+### 3. Deploy
+```bash
+# Deploy with automatic configuration
+langgraph up
 
-The main logic is in `src/agent/graph.py`. You can import and use the agent graph, or call the utility functions for ingestion and querying:
+# Or deploy with specific configuration
+langgraph deploy --config langgraph.json
+```
 
-### Example: Add Website Content
+### 4. Test Deployment
+```bash
+# Test the deployed graph
+langgraph invoke multi_rag_agent '{"query": "What is Python?"}'
+```
+
+## Platform-Specific Features
+
+### 1. Automatic Initialization
+The system automatically ingests default websites on startup if `DEFAULT_WEBSITES` is configured.
+
+### 2. Health Monitoring
+Built-in health check endpoint for platform monitoring:
 ```python
-from agent.graph import add_website_content
-add_website_content("https://example.com")
+health_status = await deployment.health_check()
 ```
 
-### Example: Add Document Content
+### 3. Content Management
+Platform-compatible content ingestion:
 ```python
-from agent.graph import add_document_content
-add_document_content("./uploaded_documents/sample.pdf")
+await deployment.ingest_content({
+    "websites": ["https://example.com"],
+    "documents": ["/path/to/doc.pdf"]
+})
 ```
 
-### Example: Query the RAG System
+## Usage on Platform
+
+### 1. Direct Graph Invocation
 ```python
-from agent.graph import query_rag
-response = query_rag("What is this project about?", website_url="https://example.com")
-print(response)
+from langgraph import invoke_graph
+
+result = await invoke_graph(
+    "multi_rag_agent",
+    {
+        "query": "Your question here",
+        "max_tokens": 4000,
+        "temperature": 0.1
+    }
+)
 ```
 
-### Example: List Content Sources
+### 2. Platform API
+If platform exposes REST API:
+```bash
+curl -X POST "https://your-deployment.langgraph.com/invoke" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "What is LangGraph?"}'
+```
+
+### 3. Streaming Support
 ```python
-from agent.graph import get_available_content_sources
-sources = get_available_content_sources()
-print(sources)
+async for chunk in stream_graph("multi_rag_agent", {"query": "Tell me about AI"}):
+    print(chunk)
 ```
 
-## Configuration
+## Environment Configuration
 
-- **Chunk size, overlap, and retrieval parameters** can be adjusted in `src/agent/graph.py`.
-- **Model, temperature, and API key** are set via environment variables.
+### Required Variables
+- `OPENAI_API_KEY`: Your OpenAI API key
 
-## Development
+### Optional Variables
+- `CHUNK_SIZE`: Document chunk size (default: 1000)
+- `CHUNK_OVERLAP`: Chunk overlap (default: 200) 
+- `SIMILARITY_THRESHOLD`: Search threshold (default: 0.7)
+- `DEFAULT_WEBSITES`: Comma-separated URLs to ingest on startup
 
-- Lint, format, and test commands are available in the `Makefile`.
-- Dependencies are managed in `requirements.txt` and `pyproject.toml`.
+## Monitoring and Debugging
 
-## License
+### 1. Platform Logs
+Check platform logs for system messages:
+```bash
+langgraph logs multi_rag_agent
+```
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+### 2. Health Checks
+Monitor system health:
+```python
+health = await deployment.health_check()
+print(f"Status: {health['status']}")
+print(f"Ready: {health['system_ready']}")
+```
+
+### 3. Performance Metrics
+Track query performance through platform metrics dashboard.
+
+## Scaling and Optimization
+
+### 1. Resource Configuration
+Adjust platform resources based on usage:
+- Memory: Increase for larger vector stores
+- CPU: Scale for concurrent queries
+- Storage: Ensure sufficient space for documents
+
+### 2. Caching Strategy
+The system uses FAISS for efficient vector storage and retrieval.
+
+### 3. Cost Optimization
+- Use `gpt-4o-mini` for cost-effective LLM fallback
+- Implement query result caching
+- Optimize chunk sizes for your use case
+
+## Security Considerations
+
+1. **API Keys**: Store securely in platform environment variables
+2. **Content Validation**: Validate URLs and documents before ingestion
+3. **Rate Limiting**: Platform handles request rate limiting
+4. **Access Control**: Configure platform access permissions
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Deployment Fails**
+   - Check `langgraph.json` syntax
+   - Verify all dependencies in `requirements.txt`
+   - Ensure environment variables are set
+
+2. **Graph Not Found**
+   - Verify graph
