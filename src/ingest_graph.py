@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TypedDict
 import os
 from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
@@ -10,27 +10,27 @@ from langgraph.graph import StateGraph, START, END
 from .config import OPENAI_API_KEY, PINECONE_API_KEY, INDEX_NAME
 
 
-class IngestState:
-    url: str | None = None
-    file_path: str | None = None
-    source_type: str = ""
-    source_name: str = ""
-    docs: List[Document] = []
-    chunks: List[Document] = []
+class IngestState(TypedDict):
+    url: str | None
+    file_path: str | None
+    source_type: str
+    source_name: str
+    docs: List[Document]
+    chunks: List[Document]
 
 
 def load_source(state: IngestState) -> IngestState:
-    if state.url:
-        loader = WebBaseLoader(state.url)
+    if state.get("url"):
+        loader = WebBaseLoader(state["url"])
         docs = loader.load()
-        source_type, source_name = "website", state.url
-    elif state.file_path:
-        if state.file_path.lower().endswith(".pdf"):
-            loader = PyPDFLoader(state.file_path)
+        source_type, source_name = "website", state["url"]
+    elif state.get("file_path"):
+        if state["file_path"].lower().endswith(".pdf"):
+            loader = PyPDFLoader(state["file_path"])
         else:
-            loader = UnstructuredFileLoader(state.file_path)
+            loader = UnstructuredFileLoader(state["file_path"])
         docs = loader.load()
-        source_type, source_name = "document", os.path.basename(state.file_path)
+        source_type, source_name = "document", os.path.basename(state["file_path"])
     else:
         raise ValueError("Must provide url or file_path")
 
@@ -38,18 +38,25 @@ def load_source(state: IngestState) -> IngestState:
         doc.metadata["source_type"] = source_type
         doc.metadata["source_name"] = source_name
 
-    state.docs, state.source_type, state.source_name = docs, source_type, source_name
-    return state
+    return {
+        **state,
+        "docs": docs,
+        "source_type": source_type,
+        "source_name": source_name
+    }
 
 
 def split_docs(state: IngestState) -> IngestState:
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chunks = splitter.split_documents(state.docs)
+    chunks = splitter.split_documents(state["docs"])
     for chunk in chunks:
-        chunk.metadata["source_type"] = state.source_type
-        chunk.metadata["source_name"] = state.source_name
-    state.chunks = chunks
-    return state
+        chunk.metadata["source_type"] = state["source_type"]
+        chunk.metadata["source_name"] = state["source_name"]
+    
+    return {
+        **state,
+        "chunks": chunks
+    }
 
 
 def store_in_pinecone(state: IngestState) -> IngestState:
@@ -63,12 +70,12 @@ def store_in_pinecone(state: IngestState) -> IngestState:
             name=INDEX_NAME,
             dimension=1536,  # OpenAI embeddings dimension
             metric="cosine",
-            spec=ServerlessSpec(cloud="aws", region="us-east-1")  # 👈 change if needed
+            spec=ServerlessSpec(cloud="aws", region="us-east-1")
         )
 
     # Use PineconeVectorStore wrapper
     PineconeVectorStore.from_documents(
-        documents=state.chunks,
+        documents=state["chunks"],
         embedding=embeddings,
         index_name=INDEX_NAME
     )

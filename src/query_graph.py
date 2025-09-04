@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, TypedDict
 from pinecone import Pinecone
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
@@ -6,11 +6,11 @@ from langgraph.graph import StateGraph, START, END
 from .config import OPENAI_API_KEY, PINECONE_API_KEY, INDEX_NAME
 
 
-class QueryState:
-    query: str = ""
-    source_type: Optional[str] = None
-    source_name: Optional[str] = None
-    answer: str = ""
+class QueryState(TypedDict):
+    query: str
+    source_type: Optional[str]
+    source_name: Optional[str]
+    answer: str
 
 
 def query_pinecone(state: QueryState) -> QueryState:
@@ -25,24 +25,26 @@ def query_pinecone(state: QueryState) -> QueryState:
 
     # Optional metadata filters
     filters = {}
-    if state.source_type:
-        filters["source_type"] = state.source_type
-    if state.source_name:
-        filters["source_name"] = state.source_name
+    if state.get("source_type"):
+        filters["source_type"] = state["source_type"]
+    if state.get("source_name"):
+        filters["source_name"] = state["source_name"]
 
     retriever = vectorstore.as_retriever(
         search_kwargs={"k": 3, "filter": filters if filters else {}}
     )
     llm = ChatOpenAI(model="gpt-4o-mini")
 
-    docs = retriever.get_relevant_documents(state.query)
+    docs = retriever.get_relevant_documents(state["query"])
     context = "\n\n".join([doc.page_content for doc in docs]) if docs else "No relevant documents found."
 
-    prompt = f"Answer based on the ingested data:\n\nContext:\n{context}\n\nQuestion: {state.query}"
+    prompt = f"Answer based on the ingested data:\n\nContext:\n{context}\n\nQuestion: {state['query']}"
     response = llm.invoke(prompt)
 
-    state.answer = response.content
-    return state
+    return {
+        **state,
+        "answer": response.content
+    }
 
 
 graph = StateGraph(QueryState)
