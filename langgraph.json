@@ -1,14 +1,6 @@
 {
-  "project": "website-rag-agent",
   "graphs": {
-    "website_rag_graph": "src/graph/workflow.py"
-  },
-  "env": {
-    "OPENAI_API_KEY": "${OPENAI_API_KEY}"
-  },
-  "dev": {
-    "host": "127.0.0.1",
-    "port": 8000,
-    "reload": true
+    "ingest": "src.ingest_graph:graph_ingest",
+    "query": "src.query_graph:graph_query"
   }
 }

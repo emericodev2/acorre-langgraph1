@@ -1,10 +1,9 @@
 langgraph
 langchain
 langchain-openai
+langchain-pinecone
 langchain-community
-chromadb
-beautifulsoup4
-requests
+pinecone-client>=3.0.0
 python-dotenv
-openai
-click
+pypdf
+unstructured

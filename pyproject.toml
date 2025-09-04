@@ -1,24 +1,37 @@
 [project]
-name = "website-rag-agent"
+name = "acorre-langgraph1"
 version = "0.1.0"
-description = "RAG agent for websites using LangChain, Chroma, and LangGraph"
-authors = [
-    { name="Your Name", email="you@example.com" }
-]
-requires-python = ">=3.10"
+description = "LangGraph project with Pinecone RAG ingestion + query"
+authors = [{ name = "R" }]
 readme = "README.md"
-license = { text = "MIT" }
-keywords = ["RAG", "LangChain", "Chroma", "LangGraph", "AI"]
+requires-python = ">=3.10"
 
-[project.dependencies]
-python-dotenv = "^1.0"
-requests = "^2.31"
-beautifulsoup4 = "^4.12"
-langchain = "^1.0"
-chromadb = "^0.3.33"
-langchain-community = "^0.0.300" 
-click = "^8.2"
+dependencies = [
+    "langgraph",
+    "langchain",
+    "langchain-openai",
+    "langchain-pinecone",
+    "langchain-community",
+    "pinecone-client>=3.0.0",
+    "python-dotenv",
+    "pypdf",
+    "unstructured",
+]
 
 [build-system]
-requires = ["setuptools>=65.0", "wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.langgraph]
+# 👇 The CLI only looks here
+dependencies = [
+    "langgraph",
+    "langchain",
+    "langchain-openai",
+    "langchain-pinecone",
+    "langchain-community",
+    "pinecone-client>=3.0.0",
+    "python-dotenv",
+    "pypdf",
+    "unstructured",
+]
