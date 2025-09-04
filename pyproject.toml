@@ -1,37 +1,98 @@
 [project]
-name = "acorre-langgraph1"
-version = "0.1.0"
-description = "LangGraph project with Pinecone RAG ingestion + query"
-authors = [{ name = "R" }]
+name = "agent"
+version = "0.0.1"
+description = "Starter template for making a new agent LangGraph."
+authors = [
+    { name = "William Fu-Hinthorn", email = "13333726+hinthornw@users.noreply.github.com" },
+]
 readme = "README.md"
-requires-python = ">=3.10"
+license = { text = "MIT" }
+requires-python = ">=3.9"
 
 dependencies = [
-    "langgraph",
-    "langchain",
-    "langchain-openai",
-    "langchain-pinecone",
-    "langchain-community",
-    "pinecone",
-    "python-dotenv",
-    "pypdf",
-    "unstructured",
+    # Core LangGraph + LangChain
+    "langgraph>=0.2.6",
+    "langgraph-cli[inmem]>=0.2.8",
+    "langchain>=0.2.0",
+    "langchain-openai>=0.1.0",
+    "langchain-community>=0.0.9",
+    "langchain-chroma>=0.1.0",
+    "langchain-pinecone>=0.1.0",
+
+    # Vectorstores
+    "pinecone-client>=3.0.0",
+    "chromadb>=0.4.0",
+
+    # File + document loaders
+    "pypdf>=4.0.0",
+    "unstructured[csv,excel]>=0.12.0",
+    "openpyxl>=3.1.0",
+    "tabulate>=0.9.0",
+    "filetype>=1.2.0",
+
+    # Web + scraping
+    "beautifulsoup4>=4.12.2",
+    "requests>=2.32.0",
+
+    # API + deployment
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-multipart>=0.0.6",
+
+    # Env management
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.11.1",
+    "ruff>=0.6.1",
 ]
 
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=73.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.langgraph]
-# 👇 The CLI only looks here
-dependencies = [
-    "langgraph",
-    "langchain",
-    "langchain-openai",
-    "langchain-pinecone",
-    "langchain-community",
-    "pinecone",
-    "python-dotenv",
-    "pypdf",
-    "unstructured",
+[tool.setuptools]
+packages = ["langgraph.templates.agent", "agent"]
+
+[tool.setuptools.package-dir]
+"langgraph.templates.agent" = "src/agent"
+"agent" = "src/agent"
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+[tool.ruff]
+lint.select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "D",    # pydocstyle
+    "D401", # First line should be in imperative mood
+    "T201",
+    "UP",
+]
+lint.ignore = [
+    "UP006",
+    "UP007",
+    # Allow typing_extensions
+    "UP035",
+    # Relax docstring strictness
+    "D417",
+    "E501",
+]
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "UP"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[dependency-groups]
+dev = [
+    "anyio>=4.7.0",
+    "langgraph-cli[inmem]>=0.2.8",
+    "mypy>=1.13.0",
+    "pytest>=8.3.5",
+    "ruff>=0.8.2",
 ]
