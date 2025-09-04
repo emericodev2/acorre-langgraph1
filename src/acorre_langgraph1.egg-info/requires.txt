@@ -1,9 +1,0 @@
-langgraph
-langchain
-langchain-openai
-langchain-pinecone
-langchain-community
-pinecone-client>=3.0.0
-python-dotenv
-pypdf
-unstructured
