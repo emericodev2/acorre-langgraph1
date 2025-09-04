@@ -1,6 +1,10 @@
-langchain>=0.2.0
-langchain-openai>=0.1.0
-langchain-chroma 
+langgraph
+langchain
+langchain-openai
+langchain-community
 chromadb
-fastapi
-uvicorn
+beautifulsoup4
+requests
+python-dotenv
+openai
+click
