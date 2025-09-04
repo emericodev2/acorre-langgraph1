@@ -30,7 +30,7 @@ dependencies = [
     "langchain-openai",
     "langchain-pinecone",
     "langchain-community",
-    "pinecone-client>=3.0.0",
+    "pinecone",
     "python-dotenv",
     "pypdf",
     "unstructured",
