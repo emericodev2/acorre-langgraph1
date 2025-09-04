@@ -2,7 +2,7 @@ from typing import List, TypedDict
 import os
 from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
-from langchain_pinecone import PineconeVectorStore
+from langchain_community.vectorstores import Pinecone
 from langchain_community.document_loaders import WebBaseLoader, PyPDFLoader, UnstructuredFileLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
@@ -60,26 +60,25 @@ def split_docs(state: IngestState) -> IngestState:
 
 
 def store_in_pinecone(state: IngestState) -> IngestState:
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
     pc = Pinecone(api_key=PINECONE_API_KEY)
 
-    # Check if index exists, otherwise create it (serverless mode)
     existing_indexes = [i.name for i in pc.list_indexes()]
     if INDEX_NAME not in existing_indexes:
         pc.create_index(
             name=INDEX_NAME,
-            dimension=1536,  # OpenAI embeddings dimension
+            dimension=1536,
             metric="cosine",
             spec=ServerlessSpec(cloud="aws", region="us-east-1")
         )
 
-    # Use PineconeVectorStore wrapper
-    PineconeVectorStore.from_documents(
-        documents=state["chunks"],
-        embedding=embeddings,
-        index_name=INDEX_NAME
+    vectorstore = Pinecone.from_existing_index(
+        index_name=INDEX_NAME,
+        embedding=embeddings
     )
+    vectorstore.add_documents(state["chunks"])
     return state
+
 
 
 graph = StateGraph(IngestState)
